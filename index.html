@@ -29,12 +29,19 @@
         <title>Mostly Joking 🐄</title>
 
         <style>
-            .center {
+            .mooty {
                 display: block;
                 margin-left: auto;
                 margin-right: 0px;
                 margin-top: 0px;
                 width: 30%;
+            }
+            .gfm-embed {
+                display: block;
+                margin-left: 10px;
+                margin-top: 10px;
+                background: transparent;
+                width: 90%;
             }
 
             body {
@@ -51,6 +58,8 @@
                 margin-right: auto;
                 -webkit-text-stroke-width: 1px;
                 -webkit-text-stroke-color: pink;
+                filter: drop-shadow(3px 3px 4px #e67efd);
+
             }
 
             h2 {
@@ -60,8 +69,19 @@
                 margin-right: auto;
                 -webkit-text-stroke-width: 1px;
                 -webkit-text-stroke-color: pink;
+                filter: drop-shadow(3px 3px 4px #e67efd);
+
+            }
+            .xmind {
+                width: 85%;
+                height: 900px;
+            }
+            .ytvid {
+                width: 420px;
+                height: 315px;
             }
         </style>
+        <script defer src="https://www.gofundme.com/static/js/embed.js"></script>
     </head>
     <body>
         <h1>
@@ -70,10 +90,14 @@
         <div>
             <h2>Follow the <a href="https://www.facebook.com/hashtag/mojomemetagchallenge/">#MoJoMemeTagChallenge</a></h2>
             <div style="display: flex">
-                <iframe src="https://xmind.app/embed/JabKTx" width="1080px" height="900px"></iframe>
-                <iframe width="420" height="315" src="https://www.youtube.com/embed/nXCzrswEhvo?autoplay=1&loop=1"></iframe>
+                <iframe class="xmind" src="https://xmind.app/embed/JabKTx"></iframe>
+                <div>
+                    <iframe class="ytvid" src="https://www.youtube.com/embed/nXCzrswEhvo?autoplay=1&loop=1"></iframe>
+                    <div class="gfm-embed" data-url="https://www.gofundme.com/f/gcf8wz-join-mostly-jokings-quest-for-a-cow-puppet/widget/large?sharesheet=CAMPAIGN_PAGE"></div>
+                </div>
+                <div></div>
             </div>
+            <img src="mooty.jpg" class="mooty" alt="cow">
         </div>
-        <img src="mooty.jpg" styl="" class="center" alt="cow">
     </body>
 </html>
