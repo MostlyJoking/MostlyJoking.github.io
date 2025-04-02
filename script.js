@@ -157,6 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Create a container for the emoji grid
                 const emojiGridContainer = document.createElement('div');
                 emojiGridContainer.className = 'emoji-grid-container';
+                emojiGridContainer.innerHTML = 'MoJo-dle Week ' + (index + 1) + ':<br/>';
 
                 // Add colored square emojis representing the guesses
                 guessHistory.forEach(function(guess) {
