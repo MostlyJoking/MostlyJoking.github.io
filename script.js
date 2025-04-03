@@ -10,6 +10,7 @@ const puzzles = [
     },
     {
         "solution": ['world', 'ren', 'owned', 'har', 'mo', 'ny', 'guys'],
+        "audio": "world-renowned-harmony-guys.mp3",
         "words": [
             ["I", "world", "fun", "at", "ny"],
             ["owned", "sun", "child", "wide", "ren"],
@@ -177,6 +178,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 congratsBox.appendChild(emojiGridContainer);
+
+                if (puzzle.audio)
+                {
+                    const warmupAudio = new Audio();
+                    warmupAudio.src = puzzle.audio;
+                    warmupAudio.controls = true;
+                    warmupAudio.autoplay = true;
+                    congratsBox.appendChild(warmupAudio);
+                }
 
                 document.body.appendChild(congratsBox);
             }
