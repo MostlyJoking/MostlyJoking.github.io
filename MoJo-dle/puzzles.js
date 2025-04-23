@@ -20,7 +20,7 @@ const puzzles = [
         ]        
     },
     {
-        "solution": ["sea", "L", "ions", "love", "you"],
+        "solution": ["sea", "li", "ons", "love", "you"],
         "audio": "sea-lions-love-you.mp3",
         "words": [
             ['sea', 'charm', 'run', 'li'],
