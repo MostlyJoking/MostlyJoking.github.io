@@ -21,6 +21,7 @@ const puzzles = [
     },
     {
         'solution': ['sea', 'L', 'ions', 'love', 'you'],
+        "audio": "sea-lions-love-you.mp3",
         'words': [
           ['sea', 'charm', 'runs', 'L'],
           ['tens', 'you', 'ions', 'rise'],
@@ -237,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (puzzle.audio)
                 {
                     const warmupAudio = new Audio();
-                    warmupAudio.src = puzzle.audio;
+                    warmupAudio.src ='Audio/' + puzzle.audio;
                     warmupAudio.controls = true;
                     warmupAudio.autoplay = true;
                     congratsBox.appendChild(warmupAudio);
