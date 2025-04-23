@@ -21,6 +21,7 @@ const puzzles = [
     },
     {
         "solution": ["sea", "L", "ions", "love", "you"],
+        "audio": "sea-lions-love-you.mp3",
         "words": [
           ["sea", "charm", "runs", "L"],
           ["tens", "you", "ions", "rise"],
