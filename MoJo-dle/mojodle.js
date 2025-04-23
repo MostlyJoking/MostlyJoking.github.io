@@ -25,8 +25,8 @@ const puzzles = [
         'words': [
           ['sea', 'charm', 'run', 'li'],
           ['butt', 'you', 'ons', 'rise'],
-          ['truth', 'me', 'love', 'emote'],
-          ['s', 'our', 'fear', 'hope']
+          ['truth', 'ly', 'love', 'emote'],
+          ['e', 'our', 'fear', 'hope']
         ]
       },
 ];
