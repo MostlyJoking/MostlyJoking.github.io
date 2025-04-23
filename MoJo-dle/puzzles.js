@@ -23,10 +23,10 @@ const puzzles = [
         "solution": ["sea", "L", "ions", "love", "you"],
         "audio": "sea-lions-love-you.mp3",
         "words": [
-          ["sea", "charm", "runs", "L"],
-          ["tens", "you", "ions", "rise"],
-          ["truth", "time", "love", "emot"],
-          ["es", "our", "fear", "hop"]
+            ['sea', 'charm', 'run', 'li'],
+            ['strap', 'you', 'ons', 'rise'],
+            ['truth', 'me', 'love', 'emote'],
+            ['s', 'our', 'fear', 'hop']
         ]
       },
 ];
