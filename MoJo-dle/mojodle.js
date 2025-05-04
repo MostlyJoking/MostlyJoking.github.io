@@ -172,6 +172,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             solutionCopy[solutionCopy.indexOf(word)] = null;
                             gridItem.style.backgroundColor = 'yellow';
                             wordItem.style.backgroundColor = 'yellow';
+                        } else {
+                            gridItem.style.backgroundColor = 'gray';
                         }
                     })
                     guessHistory.push(filledGridItems.map(function(gridItem) {
