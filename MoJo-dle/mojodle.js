@@ -143,6 +143,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 if (filledGridItems.length === gridItems.length) {
                     let correctSolution = true;
+                    let solutionCopy = solution.slice();
+                    let postProcess = [];
                     filledGridItems.forEach(function(gridItem, index) {
                         const word = gridItem.textContent;
                         const wordItem = Array.from(wordItems).find(function(item) {
@@ -151,9 +153,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (word === solution[index]) {
                             gridItem.style.backgroundColor = 'green';
                             wordItem.style.backgroundColor = 'green';
+                            solutionCopy[index] = null;
                         } else if (solution.includes(word)) {
-                            gridItem.style.backgroundColor = 'yellow';
-                            wordItem.style.backgroundColor = 'yellow';
+                            postProcess.push([gridItem, wordItem]);
                             correctSolution = false;
                         } else {
                             gridItem.style.backgroundColor = 'gray';
@@ -161,6 +163,17 @@ document.addEventListener('DOMContentLoaded', function() {
                             correctSolution = false;
                         }
                     });
+                    postProcess.forEach(function(itemindex) {
+                        // Only put yellows if they aren't in the correct position somewhere else
+                        let gridItem = itemindex[0];
+                        let wordItem = itemindex[1];
+                        const word = gridItem.textContent;
+                        if (solutionCopy.includes(word)) {
+                            solutionCopy[solutionCopy.indexOf(word)] = null;
+                            gridItem.style.backgroundColor = 'yellow';
+                            wordItem.style.backgroundColor = 'yellow';
+                        }
+                    })
                     guessHistory.push(filledGridItems.map(function(gridItem) {
                         return gridItem.style.backgroundColor;
                     }));
