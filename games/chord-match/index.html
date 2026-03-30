@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chord Memory - Mostly Joking Games</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: linear-gradient(135deg, #ede9fe, #f0fdf4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            padding: 16px;
+        }
+        h1 { font-size: 1.8rem; color: #7c3aed; margin: 8px 0 2px; }
+        .subtitle { color: #6b7280; font-size: 0.85rem; margin-bottom: 10px; }
+        .back-link { color: #7c3aed; text-decoration: none; font-size: 0.85rem; margin-bottom: 6px; display: block; text-align: center; }
+        .back-link:hover { text-decoration: underline; }
+
+        /* ── Difficulty picker ── */
+        #diffPicker {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .diff-btn {
+            padding: 7px 20px;
+            border-radius: 20px;
+            border: 2px solid #a78bfa;
+            background: white;
+            color: #7c3aed;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .diff-btn:hover { background: #ede9fe; }
+        .diff-btn.active {
+            background: #7c3aed;
+            color: white;
+            border-color: #7c3aed;
+        }
+
+        #statusBar {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 14px;
+            font-size: 0.95rem;
+            color: #374151;
+        }
+        #statusBar span { font-weight: 800; color: #7c3aed; }
+
+        /* ── Card grid (columns set dynamically via JS) ── */
+        .card-grid {
+            display: grid;
+            gap: 10px;
+            perspective: 900px;
+        }
+
+        /* ── Symbol cards (Easy) ── */
+        .card {
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.42s cubic-bezier(0.4,0,0.2,1);
+            border-radius: 12px;
+        }
+        .card.flipped, .card.matched { transform: rotateY(180deg); }
+        .card-face {
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .card-back {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            border: 3px solid #6d28d9;
+            font-size: 2rem;
+            color: rgba(255,255,255,0.5);
+            user-select: none;
+        }
+        .card-front {
+            background: white;
+            border: 3px solid #c4b5fd;
+            transform: rotateY(180deg);
+            flex-direction: column;
+            gap: 4px;
+        }
+        .card-front .symbol { font-size: 2.2rem; line-height: 1; }
+        .card-front .label  { font-size: 0.6rem; color: #6b7280; font-weight: 600; text-align: center; padding: 0 4px; }
+
+        /* Chord cards (Medium/Hard) use a canvas inside .card-front */
+        .card-front canvas { display: block; }
+        .card-front .chord-name {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #7c3aed;
+            text-align: center;
+            padding: 2px 4px 0;
+            line-height: 1.1;
+        }
+
+        .card.matched .card-front { background: #f0fdf4; border-color: #22c55e; }
+        .card.matched .symbol { filter: drop-shadow(0 0 6px #22c55e); }
+        .card.wrong { animation: shake 0.4s ease; }
+        .card.wrong .card-front { background: #fef2f2; border-color: #ef4444; }
+        @keyframes shake {
+            0%,100%  { transform: rotateY(180deg) translateX(0); }
+            20%,60%  { transform: rotateY(180deg) translateX(-5px); }
+            40%,80%  { transform: rotateY(180deg) translateX(5px); }
+        }
+
+        #winScreen {
+            display: none;
+            margin-top: 20px;
+            background: white;
+            border-radius: 20px;
+            border: 3px solid #7c3aed;
+            padding: 24px 36px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        #winScreen h2 { color: #7c3aed; font-size: 1.8rem; }
+        #winScreen p  { color: #555; margin: 6px 0; }
+        #winScreen .big { font-size: 2rem; font-weight: 900; color: #22c55e; }
+        #restartBtn, #nextDiffBtn {
+            margin-top: 12px;
+            background: #7c3aed;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 11px 28px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+        #restartBtn:hover, #nextDiffBtn:hover { background: #6d28d9; }
+        #nextDiffBtn { background: #22c55e; }
+        #nextDiffBtn:hover { background: #16a34a; }
+    </style>
+</head>
+<body>
+    <a href="../../games.html" class="back-link">&larr; Back to Games</a>
+    <h1>&#127183; Chord Memory</h1>
+    <p class="subtitle">Find all matching pairs!</p>
+
+    <div id="diffPicker">
+        <button class="diff-btn active" data-diff="easy">Easy</button>
+        <button class="diff-btn" data-diff="medium">Medium</button>
+        <button class="diff-btn" data-diff="hard">Hard</button>
+    </div>
+
+    <div id="statusBar">
+        Matched: <span id="matchCount">0</span>/<span id="totalPairs">8</span>
+        &nbsp; Flips: <span id="flipCount">0</span>
+        &nbsp; Time: <span id="timerDisplay">0:00</span>
+    </div>
+
+    <div class="card-grid" id="cardGrid"></div>
+
+    <div id="winScreen">
+        <h2>&#127937; You win!</h2>
+        <p>All matched in <span id="finalFlips">0</span> flips and <span id="finalTime">0:00</span>.</p>
+        <div class="big" id="starRating">&#9733;&#9733;&#9733;</div>
+        <div style="margin-top:12px;">
+            <button id="restartBtn">Play Again</button>
+            <button id="nextDiffBtn" style="display:none;">Next Difficulty &#8594;</button>
+        </div>
+    </div>
+
+    <script>
+    // ══════════════════════════════════════════════════════
+    //  EASY — musical symbol pairs (original game)
+    // ══════════════════════════════════════════════════════
+    const EASY_SYMBOLS = [
+        { sym: '𝄞', label: 'Treble Clef'  },
+        { sym: '𝄢', label: 'Bass Clef'    },
+        { sym: '♩',  label: 'Quarter Note' },
+        { sym: '𝅗𝅥', label: 'Whole Note'   },
+        { sym: '♯',  label: 'Sharp'        },
+        { sym: '♭',  label: 'Flat'         },
+        { sym: '♮',  label: 'Natural'      },
+        { sym: '♪',  label: 'Eighth Note'  },
+    ];
+
+    // ══════════════════════════════════════════════════════
+    //  MEDIUM — Major, Minor, Dominant 7th chords
+    //  Each entry: { id, name, notes[] }
+    //  notes are scale-degree offsets from C4 reference
+    //  We store them as semitone intervals from root,
+    //  then map to staff positions.
+    // ══════════════════════════════════════════════════════
+
+    // Staff position helper (treble clef)
+    // Position 0 = middle C (C4) — one ledger line below staff
+    // Each step = half a line space (alternating line/space)
+    // C4=0, D4=1, E4=2, F4=3, G4=4, A4=5, B4=6, C5=7, D5=8, E5=9, F5=10, G5=11
+    const NOTE_NAMES = ['C','D','E','F','G','A','B'];
+    // Chromatic index of each diatonic note (C=0)
+    const DIATONIC_CHROMA = [0,2,4,5,7,9,11];
+
+    // Given a MIDI note number, return staff step (0=C4, 1=D4, ... 7=C5 ...)
+    // We work in the range C4 (midi 60) to G5 (midi 79) for readability
+    function midiToStaffStep(midi) {
+        // Octave relative to C4
+        const semis = midi - 60;  // semitones above C4
+        // Find diatonic step: count diatonic notes
+        let octave = Math.floor(semis / 12);
+        let rem    = ((semis % 12) + 12) % 12;
+        // Find closest diatonic note at or below
+        let dia = 0;
+        for (let i = 6; i >= 0; i--) {
+            if (DIATONIC_CHROMA[i] <= rem) { dia = i; break; }
+        }
+        return octave * 7 + dia;
+    }
+
+    // Chord intervals (semitones from root)
+    // Triads are voiced root-3rd-5th-root(8va) for 4 noteheads.
+    // 7th chords already have 4 notes; omit the 5th if > 4 notes would result.
+    const CHORD_TYPES = {
+        'maj':  [0, 4, 7, 12],   // root 3rd 5th root+8va
+        'min':  [0, 3, 7, 12],   // root m3rd 5th root+8va
+        'dom7': [0, 4, 7, 10],   // root 3rd 5th m7th  (already 4)
+        'dim':  [0, 3, 6, 12],   // root m3rd d5th root+8va
+        'aug':  [0, 4, 8, 12],   // root 3rd A5th root+8va
+        'min7': [0, 3, 7, 10],   // root m3rd 5th m7th  (already 4)
+    };
+
+    // Root note MIDI values (C4=60 through B4=71)
+    const ROOTS = {
+        'C': 60, 'D': 62, 'E': 64, 'F': 65,
+        'G': 67, 'A': 69, 'B': 71,
+        'C#': 61, 'Db': 61, 'D#': 63, 'Eb': 63,
+        'F#': 66, 'Gb': 66, 'G#': 68, 'Ab': 68,
+        'A#': 70, 'Bb': 70,
+    };
+
+    // Pretty display names
+    const TYPE_DISPLAY = {
+        'maj': '', 'min': 'm', 'dom7': '7',
+        'dim': '°', 'aug': '+', 'min7': 'm7',
+    };
+
+    function makeChord(root, type) {
+        let rootMidi   = ROOTS[root];
+        const intervals = CHORD_TYPES[type];
+        let midis = intervals.map(i => rootMidi + i);
+
+        // If any note exceeds midi 81 (A5), shift the ENTIRE chord down an octave.
+        // This keeps Bb maj (Bb5=82) and B dim (B5=83) within the visible staff range
+        // without splitting individual notes — so the voicing shape stays intact.
+        if (midis.some(m => m > 81)) {
+            rootMidi -= 12;
+            midis = intervals.map(i => rootMidi + i);
+        }
+
+        const steps = midis.map(midiToStaffStep);
+        return {
+            id:    root + '_' + type,
+            name:  root + TYPE_DISPLAY[type],
+            steps,
+            midis,
+        };
+    }
+
+    // ── Medium deck (10 pairs) ──
+    const MEDIUM_CHORDS = [
+        makeChord('C',  'maj'),
+        makeChord('G',  'maj'),
+        makeChord('F',  'maj'),
+        makeChord('D',  'min'),
+        makeChord('A',  'min'),
+        makeChord('E',  'min'),
+        makeChord('G',  'dom7'),
+        makeChord('C',  'dom7'),
+        makeChord('Bb', 'maj'),
+        makeChord('F#', 'min'),
+    ];
+
+    // ── Hard deck (12 pairs) ──
+    const HARD_CHORDS = [
+        makeChord('C',  'maj'),
+        makeChord('D',  'min'),
+        makeChord('G',  'dom7'),
+        makeChord('B',  'dim'),
+        makeChord('C',  'aug'),
+        makeChord('A',  'min7'),
+        makeChord('E',  'min'),
+        makeChord('F',  'maj'),
+        makeChord('Eb', 'maj'),
+        makeChord('F#', 'dim'),
+        makeChord('Ab', 'aug'),
+        makeChord('D',  'min7'),
+    ];
+
+    // ══════════════════════════════════════════════════════
+    //  Canvas chord drawing
+    // ══════════════════════════════════════════════════════
+
+    const CARD_W_CHORD = 80;
+    const CARD_H_CHORD = 100;
+    const STAFF_CANVAS_W = 76;
+    const STAFF_CANVAS_H = 74;   // taller to accommodate notes below/above the staff
+
+    // Staff: 5 lines at steps 2 (E4), 4 (G4), 6 (B4), 8 (D5), 10 (F5)
+    const STAFF_LINE_STEPS = [2, 4, 6, 8, 10];
+
+    // Visible note range: step -2 (Bb3/A3) at canvas bottom → step 12 (A5) at canvas top.
+    // This accommodates both low-octave shifted chords and the doubled-root-at-top notes.
+    const STEP_MIN = -2;   // Bb3/A3
+    const STEP_MAX = 12;   // A5
+
+    function staffY(step, cw, ch) {
+        const top = 6, bot = ch - 6;
+        return bot - (step - STEP_MIN) * (bot - top) / (STEP_MAX - STEP_MIN);
+    }
+
+    function drawChordOnCanvas(canvas, chord, isFlat) {
+        const cw = canvas.width, ch = canvas.height;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, cw, ch);
+
+        // Staff lines
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 1;
+        for (const step of STAFF_LINE_STEPS) {
+            const y = staffY(step, cw, ch);
+            ctx.beginPath();
+            ctx.moveTo(4, y); ctx.lineTo(cw - 4, y);
+            ctx.stroke();
+        }
+
+        // Treble clef — sized to match staff height
+        ctx.font = '26px serif';
+        ctx.fillStyle = 'rgba(0,0,0,0.78)';
+        ctx.textBaseline = 'bottom';
+        ctx.textAlign = 'left';
+        ctx.fillText('\uD834\uDD1E', 2, staffY(2, cw, ch) + 5);  // 𝄞 bottom near E4
+
+        const noteX = cw * 0.70;
+        const minStep = Math.min(...chord.steps);
+        const maxStep = Math.max(...chord.steps);
+
+        // ── Ledger lines ───────────────────────────────────────────
+        // Below staff: draw one ledger for each even step < 2, down to minStep
+        ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
+        for (let ls = 0; ls >= minStep; ls -= 2) {
+            if (ls < 2) {   // outside the staff
+                const ly = staffY(ls, cw, ch);
+                ctx.beginPath();
+                ctx.moveTo(noteX - 9, ly); ctx.lineTo(noteX + 9, ly);
+                ctx.stroke();
+            }
+        }
+        // Above staff: draw ledger at step 12 (A5) if needed
+        for (let ls = 12; ls <= maxStep; ls += 2) {
+            if (ls > 10) {
+                const ly = staffY(ls, cw, ch);
+                ctx.beginPath();
+                ctx.moveTo(noteX - 9, ly); ctx.lineTo(noteX + 9, ly);
+                ctx.stroke();
+            }
+        }
+
+        // ── Noteheads ──────────────────────────────────────────────
+        for (let i = 0; i < chord.steps.length; i++) {
+            const step = chord.steps[i];
+            const y    = staffY(step, cw, ch);
+            const mid  = chord.midis[i];
+
+            // Accidental (sharp or flat, blue)
+            const rem = ((mid - 60) % 12 + 12) % 12;
+            const needsAcc = !DIATONIC_CHROMA.includes(rem);
+            if (needsAcc) {
+                const acc = isFlat ? '\u266D' : '\u266F';   // ♭ or ♯
+                ctx.font = 'bold 9px serif';
+                ctx.fillStyle = '#1d4ed8';
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = 'right';
+                ctx.fillText(acc, noteX - 5, y);
+            }
+
+            // Filled notehead
+            ctx.fillStyle = '#1f1f2e';
+            ctx.beginPath();
+            ctx.ellipse(noteX, y, 5.5, 4, -0.25, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // ── Stem ───────────────────────────────────────────────────
+        // Stem up from the top note; clamped so it doesn't leave the canvas
+        const topY    = staffY(maxStep, cw, ch);
+        const stemTip = Math.max(3, topY - 22);
+        ctx.strokeStyle = '#1f1f2e'; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(noteX + 5.5, topY);
+        ctx.lineTo(noteX + 5.5, stemTip);
+        ctx.stroke();
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  Game state
+    // ══════════════════════════════════════════════════════
+
+    let difficulty  = 'easy';
+    let totalPairs  = 8;
+    let cards       = [];
+    let flipped     = [];
+    let matched     = 0;
+    let flips       = 0;
+    let locked      = false;
+    let timerInterval = null;
+    let startTime   = null;
+    let elapsed     = 0;
+
+    const DIFFICULTY_CONFIG = {
+        easy:   { pairs: 8,  cols: 4, cardW: 90,  cardH: 110, starFlips: [18, 26] },
+        medium: { pairs: 10, cols: 5, cardW: 84,  cardH: 120, starFlips: [24, 34] },
+        hard:   { pairs: 12, cols: 6, cardW: 80,  cardH: 116, starFlips: [28, 40] },
+    };
+
+    function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i+1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    function formatTime(s) {
+        return Math.floor(s/60) + ':' + String(Math.floor(s%60)).padStart(2,'0');
+    }
+
+    function updateTimer() {
+        elapsed = (Date.now() - startTime) / 1000;
+        document.getElementById('timerDisplay').textContent = formatTime(elapsed);
+    }
+
+    // Determine whether a chord uses flat accidentals
+    function chordUsesFlats(chordId) {
+        const flatRoots = ['Bb','Eb','Ab','Db','Gb','F'];
+        return flatRoots.some(r => chordId.startsWith(r + '_'));
+    }
+
+    function buildGrid() {
+        const cfg  = DIFFICULTY_CONFIG[difficulty];
+        const grid = document.getElementById('cardGrid');
+        grid.innerHTML = '';
+        grid.style.gridTemplateColumns = `repeat(${cfg.cols}, ${cfg.cardW}px)`;
+        cards   = [];
+        flipped = [];
+        matched = 0; flips = 0; locked = false;
+        totalPairs = cfg.pairs;
+        document.getElementById('matchCount').textContent = '0';
+        document.getElementById('totalPairs').textContent = cfg.pairs;
+        document.getElementById('flipCount').textContent  = '0';
+        document.getElementById('timerDisplay').textContent = '0:00';
+        document.getElementById('winScreen').style.display = 'none';
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        startTime = null;
+
+        let deck;
+        if (difficulty === 'easy') {
+            deck = shuffle([...EASY_SYMBOLS, ...EASY_SYMBOLS]);
+        } else {
+            const chords = difficulty === 'medium' ? MEDIUM_CHORDS : HARD_CHORDS;
+            // Take first cfg.pairs chords (already curated), duplicate + shuffle
+            deck = shuffle([...chords.slice(0, cfg.pairs), ...chords.slice(0, cfg.pairs)]);
+        }
+
+        deck.forEach((card, idx) => {
+            const el = document.createElement('div');
+            el.className = 'card';
+            el.style.width  = cfg.cardW + 'px';
+            el.style.height = cfg.cardH + 'px';
+            el.dataset.idx  = idx;
+
+            let frontContent;
+            if (difficulty === 'easy') {
+                el.dataset.sym = card.sym;
+                frontContent = `<span class="symbol">${card.sym}</span><span class="label">${card.label}</span>`;
+            } else {
+                el.dataset.sym = card.id;
+                const isFlat = chordUsesFlats(card.id);
+                // We'll fill the canvas after appending
+                frontContent = `<canvas width="${STAFF_CANVAS_W}" height="${STAFF_CANVAS_H}"></canvas><span class="chord-name">${card.name}</span>`;
+            }
+
+            el.innerHTML = `
+                <div class="card-face card-back">&#9834;</div>
+                <div class="card-face card-front">${frontContent}</div>`;
+            el.addEventListener('click', () => flipCard(el));
+            grid.appendChild(el);
+            cards.push(el);
+
+            // Draw chord on canvas after in DOM
+            if (difficulty !== 'easy') {
+                const cvs = el.querySelector('canvas');
+                drawChordOnCanvas(cvs, card, chordUsesFlats(card.id));
+            }
+        });
+    }
+
+    function flipCard(el) {
+        if (locked) return;
+        if (el.classList.contains('flipped') || el.classList.contains('matched')) return;
+
+        if (!startTime) {
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 500);
+        }
+
+        el.classList.add('flipped');
+        flipped.push(el);
+        flips++;
+        document.getElementById('flipCount').textContent = flips;
+
+        if (flipped.length === 2) {
+            locked = true;
+            const [a, b] = flipped;
+            if (a.dataset.sym === b.dataset.sym) {
+                setTimeout(() => {
+                    a.classList.add('matched'); b.classList.add('matched');
+                    a.classList.remove('flipped'); b.classList.remove('flipped');
+                    flipped = []; locked = false;
+                    matched++;
+                    document.getElementById('matchCount').textContent = matched;
+                    if (matched === totalPairs) winGame();
+                }, 400);
+            } else {
+                a.classList.add('wrong'); b.classList.add('wrong');
+                setTimeout(() => {
+                    a.classList.remove('flipped','wrong');
+                    b.classList.remove('flipped','wrong');
+                    flipped = []; locked = false;
+                }, 900);
+            }
+        }
+    }
+
+    function winGame() {
+        clearInterval(timerInterval);
+        updateTimer();
+        const cfg   = DIFFICULTY_CONFIG[difficulty];
+        const stars = flips <= cfg.starFlips[0] ? '★★★' : flips <= cfg.starFlips[1] ? '★★☆' : '★☆☆';
+        document.getElementById('finalFlips').textContent = flips;
+        document.getElementById('finalTime').textContent  = formatTime(elapsed);
+        document.getElementById('starRating').textContent = stars;
+
+        // Show "Next Difficulty" button if not already on Hard
+        const nextMap = { easy: 'medium', medium: 'hard' };
+        const nextDiffBtn = document.getElementById('nextDiffBtn');
+        if (nextMap[difficulty]) {
+            nextDiffBtn.style.display = 'inline-block';
+            nextDiffBtn.textContent   = 'Try ' + nextMap[difficulty].charAt(0).toUpperCase() + nextMap[difficulty].slice(1) + ' →';
+            nextDiffBtn._next = nextMap[difficulty];
+        } else {
+            nextDiffBtn.style.display = 'none';
+        }
+
+        document.getElementById('winScreen').style.display = 'block';
+        document.getElementById('winScreen').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ── Difficulty buttons ──
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            difficulty = btn.dataset.diff;
+            buildGrid();
+        });
+    });
+
+    document.getElementById('restartBtn').addEventListener('click', buildGrid);
+    document.getElementById('nextDiffBtn').addEventListener('click', function() {
+        const next = this._next;
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.diff-btn[data-diff="${next}"]`).classList.add('active');
+        difficulty = next;
+        buildGrid();
+    });
+
+    buildGrid();
+    </script>
+</body>
+</html>

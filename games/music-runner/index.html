@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note Runner - Mostly Joking Games</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            padding: 10px;
+        }
+        h1 { font-size: 1.8rem; color: #1f1f2e; margin: 8px 0 2px; }
+        .subtitle { color: #666; font-size: 0.85rem; margin-bottom: 10px; }
+        .back-link { color: #7c3aed; text-decoration: none; font-size: 0.85rem; margin-bottom: 6px; display: block; text-align: center; }
+        .back-link:hover { text-decoration: underline; }
+
+        /* No border — the staff lines ARE the boundary */
+        #gameCanvas {
+            cursor: pointer;
+            background: white;
+            display: block;
+            max-width: 100%;
+        }
+
+        #scoreBar {
+            display: flex;
+            gap: 30px;
+            margin: 8px 0;
+            font-size: 1rem;
+            color: #1f1f2e;
+        }
+        #scoreBar span { font-weight: 800; color: #7c3aed; }
+
+        .controls-hint {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: #888;
+            text-align: center;
+        }
+        .controls-hint b { color: #1f1f2e; }
+    </style>
+</head>
+<body>
+    <a href="../../games.html" class="back-link">&larr; Back to Games</a>
+    <h1>&#9835; Note Runner</h1>
+    <p class="subtitle">Dodge the incoming notes &mdash; stay on the right line!</p>
+
+    <div id="scoreBar">
+        Score: <span id="scoreDisplay">0</span>
+        &nbsp;&nbsp; Best: <span id="bestDisplay">0</span>
+        &nbsp;&nbsp; Speed: <span id="speedDisplay">1.0</span>x
+    </div>
+
+    <canvas id="gameCanvas" width="680" height="280"></canvas>
+
+    <p class="controls-hint">
+        <b>&#8593; / W</b> &mdash; move up &nbsp;&nbsp;
+        <b>&#8595; / S</b> &mdash; move down &nbsp;&nbsp;
+        <b>Click / Space</b> &mdash; start / restart
+    </p>
+    <p class="controls-hint" style="margin-top:4px; color:#aaa;">
+        Mobile: tap upper half to go up, lower half to go down
+    </p>
+
+    <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx    = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // ── Staff layout ──────────────────────────────────────
+    // 5 lines, padded just enough that noteheads aren't clipped
+    const LINES = 5;
+    const LINE_PADDING = 30;   // tight — only a small margin above/below
+    const LINE_SPACING = (H - LINE_PADDING * 2) / (LINES - 1);
+    const CHAR_X = 100;
+
+    function lineY(l) {
+        return LINE_PADDING + l * LINE_SPACING;
+    }
+
+    // ── State ─────────────────────────────────────────────
+    let score, best = 0, gameOver, started;
+    let targetLine, charYOffset;
+    let speed;
+    let obstacles;      // {x, type, line?, lines?}
+    let collectibles;   // {x, type, line, collected}
+    let shieldActive, speedBoostTimer;
+    let spawnTimer, collectibleTimer, minGap;
+    let lastTime;
+    let bgOffset = 0;
+
+    function init() {
+        score           = 0;
+        gameOver        = false;
+        started         = false;
+        targetLine      = 2;
+        charYOffset     = lineY(2);
+        speed           = 220;
+        obstacles       = [];
+        collectibles    = [];
+        shieldActive    = false;
+        speedBoostTimer = 0;
+        spawnTimer      = 0;
+        collectibleTimer = 350 + Math.random() * 300;
+        minGap          = 280;
+        lastTime        = null;
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('scoreDisplay').textContent = Math.floor(score);
+        document.getElementById('bestDisplay').textContent  = Math.floor(best);
+        document.getElementById('speedDisplay').textContent = (speed / 220).toFixed(1);
+    }
+
+    // ── Drawing helpers ───────────────────────────────────
+
+    function drawStaff() {
+        ctx.strokeStyle = '#1f1f2e';
+        ctx.lineWidth = 1.5;
+        for (let l = 0; l < LINES; l++) {
+            const y = lineY(l);
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(W, y);
+            ctx.stroke();
+        }
+    }
+
+    function drawTrebleClef() {
+        ctx.font = '80px serif';
+        ctx.fillStyle = 'rgba(0,0,0,0.14)';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'left';
+        ctx.fillText('𝄞', 10, H / 2 + 4);
+    }
+
+    function drawCharacter(y) {
+        const cx = CHAR_X;
+        const cy = y;
+
+        // Shield ring
+        if (shieldActive) {
+            ctx.save();
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2.5;
+            ctx.shadowColor = '#60a5fa';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 19, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Speed-boost glow
+        if (speedBoostTimer > 0) {
+            ctx.save();
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 1.5;
+            ctx.shadowColor = '#a855f7';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Stem
+        ctx.strokeStyle = speedBoostTimer > 0 ? '#7c3aed' : '#1f1f2e';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(cx + 10, cy - 2);
+        ctx.lineTo(cx + 10, cy - 28);
+        ctx.stroke();
+        // Notehead
+        ctx.fillStyle = speedBoostTimer > 0 ? '#7c3aed' : '#1f1f2e';
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 11, 8, -0.4, 0, Math.PI * 2);
+        ctx.fill();
+        // Eyes
+        ctx.fillStyle = '#fafafa';
+        ctx.beginPath(); ctx.arc(cx - 3, cy - 1, 2.2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + 3, cy - 1, 2.2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = speedBoostTimer > 0 ? '#7c3aed' : '#1f1f2e';
+        ctx.beginPath(); ctx.arc(cx - 3, cy - 1, 1, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + 3, cy - 1, 1, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // ── Individual note drawing ───────────────────────────
+
+    function drawSingleNote(x, y, type) {
+        ctx.strokeStyle = '#1f1f2e';
+        ctx.lineWidth = 2.5;
+        switch (type) {
+            case 'whole':
+                ctx.fillStyle = 'white';
+                ctx.beginPath(); ctx.ellipse(x, y, 15, 10, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = 'white';
+                ctx.strokeStyle = '#1f1f2e'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.ellipse(x, y, 7, 4.5, -0.3, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                break;
+            case 'half':
+                ctx.fillStyle = 'white';
+                ctx.beginPath(); ctx.ellipse(x, y, 13, 9, -0.3, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x+11, y-2); ctx.lineTo(x+11, y-32); ctx.stroke();
+                break;
+            case 'eighth':
+                ctx.fillStyle = '#1f1f2e';
+                ctx.beginPath(); ctx.ellipse(x, y, 10, 7, -0.4, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#1f1f2e'; ctx.lineWidth = 2.5;
+                ctx.beginPath(); ctx.moveTo(x+8, y-2); ctx.lineTo(x+8, y-28); ctx.stroke();
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(x+8, y-28);
+                ctx.bezierCurveTo(x+18, y-18, x+20, y-8, x+11, y-4);
+                ctx.stroke();
+                break;
+            case 'rest':
+                ctx.strokeStyle = '#1f1f2e'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(x-4, y-16); ctx.lineTo(x+4, y-9);
+                ctx.lineTo(x-4, y-2); ctx.lineTo(x+5, y+5);
+                ctx.stroke();
+                ctx.beginPath(); ctx.arc(x+2, y+9, 4.5, 0.5, Math.PI+0.5); ctx.stroke();
+                ctx.lineCap = 'butt';
+                break;
+        }
+    }
+
+    // ── Chord obstacle drawing ────────────────────────────
+    // A chord: 2–3 stacked noteheads on adjacent lines, connected by one stem
+
+    function drawChordObstacle(obs) {
+        const topY    = lineY(obs.lines[0]);
+        const botY    = lineY(obs.lines[obs.lines.length - 1]);
+        const stemX   = obs.x + 12;
+
+        ctx.strokeStyle = '#1f1f2e';
+        ctx.lineWidth   = 2.5;
+
+        // Vertical stem spanning all lines
+        ctx.beginPath();
+        ctx.moveTo(stemX, topY - 28);  // stem tip above top note
+        ctx.lineTo(stemX, botY);        // down through bottom note
+        ctx.stroke();
+
+        // Draw each notehead
+        for (const l of obs.lines) {
+            const ny = lineY(l);
+            ctx.fillStyle = '#1f1f2e';
+            ctx.beginPath();
+            ctx.ellipse(obs.x, ny, 11, 8, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ledger-style accent mark (makes chord visually distinct)
+            ctx.strokeStyle = '#e67efd';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(obs.x - 14, ny);
+            ctx.lineTo(obs.x + 14, ny);
+            ctx.stroke();
+            ctx.strokeStyle = '#1f1f2e';
+            ctx.lineWidth = 2.5;
+        }
+
+        // Visual accent: small dot above top note stem tip
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(stemX, topY - 36, 4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawObstacle(obs) {
+        if (obs.type === 'chord') {
+            drawChordObstacle(obs);
+        } else {
+            drawSingleNote(obs.x, lineY(obs.line), obs.type);
+        }
+    }
+
+    // ── Collectibles ──────────────────────────────────────
+
+    function drawCollectibleCoin(x, y) {
+        // Pulsing gold coin
+        const pulse = 0.85 + 0.15 * Math.sin(Date.now() / 180);
+        const r = 12 * pulse;
+        ctx.save();
+        ctx.shadowColor = '#f59e0b';
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#d97706'; ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = '#92400e';
+        ctx.font = 'bold 10px serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('♩', x, y + 1);
+    }
+
+    function drawCollectibleShield(x, y) {
+        ctx.save();
+        ctx.shadowColor = '#3b82f6'; ctx.shadowBlur = 10;
+        ctx.fillStyle = '#3b82f6';
+        ctx.beginPath();
+        ctx.moveTo(x, y - 13);
+        ctx.lineTo(x + 10, y - 6);
+        ctx.lineTo(x + 10, y + 3);
+        ctx.lineTo(x, y + 13);
+        ctx.lineTo(x - 10, y + 3);
+        ctx.lineTo(x - 10, y - 6);
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('S', x, y + 1);
+    }
+
+    function drawCollectibleSpeed(x, y) {
+        ctx.save();
+        ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 10;
+        ctx.fillStyle = '#c084fc';
+        ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 1.5;
+        // Lightning bolt path
+        ctx.beginPath();
+        ctx.moveTo(x + 3, y - 13);
+        ctx.lineTo(x - 5, y - 1);
+        ctx.lineTo(x + 2, y - 1);
+        ctx.lineTo(x - 3, y + 13);
+        ctx.lineTo(x + 6, y + 1);
+        ctx.lineTo(x - 1, y + 1);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.restore();
+    }
+
+    function drawCollectible(col) {
+        if (col.collected) return;
+        const x = col.x, y = lineY(col.line);
+        if (col.type === 'coin')   drawCollectibleCoin(x, y);
+        if (col.type === 'shield') drawCollectibleShield(x, y);
+        if (col.type === 'speed')  drawCollectibleSpeed(x, y);
+    }
+
+    function spawnCollectible() {
+        const line = Math.floor(Math.random() * LINES);
+        // Coins are 3x as common as powerups
+        const roll = Math.random();
+        const type = roll < 0.6 ? 'coin' : roll < 0.8 ? 'shield' : 'speed';
+        collectibles.push({ x: W + 60, type, line, collected: false });
+    }
+
+    function checkCollectibles(charY) {
+        for (const col of collectibles) {
+            if (col.collected) continue;
+            if (Math.abs(col.x - CHAR_X) < 20 && Math.abs(lineY(col.line) - charY) < 15) {
+                col.collected = true;
+                if (col.type === 'coin') {
+                    score += 25; updateUI();
+                } else if (col.type === 'shield') {
+                    shieldActive = true;
+                } else if (col.type === 'speed') {
+                    speedBoostTimer = 5;  // seconds
+                }
+            }
+        }
+    }
+
+    function drawActiveEffects() {
+        ctx.save();
+        ctx.textBaseline = 'top';
+        ctx.font = 'bold 12px sans-serif';
+        let xPos = W - 8;
+        if (speedBoostTimer > 0) {
+            ctx.fillStyle = '#a855f7';
+            ctx.textAlign = 'right';
+            ctx.fillText('FAST ' + Math.ceil(speedBoostTimer) + 's', xPos, 5);
+            xPos -= 72;
+        }
+        if (shieldActive) {
+            ctx.fillStyle = '#3b82f6';
+            ctx.textAlign = 'right';
+            ctx.fillText('SHIELD', xPos, 5);
+        }
+        ctx.restore();
+    }
+
+    function drawBackground() {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, W, H);
+        // Scrolling ledger dots
+        ctx.fillStyle = 'rgba(0,0,0,0.04)';
+        for (let x = (bgOffset % 60) - 60; x < W + 60; x += 60) {
+            for (let y = 15; y < H; y += 35) {
+                ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI*2); ctx.fill();
+            }
+        }
+    }
+
+    function drawOverlay(text, sub) {
+        ctx.fillStyle = 'rgba(0,0,0,0.52)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 36px Segoe UI, Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, W/2, H/2 - 24);
+        ctx.font = '18px Segoe UI, Arial';
+        ctx.fillStyle = '#ddd';
+        ctx.fillText(sub, W/2, H/2 + 12);
+        if (gameOver) {
+            ctx.font = 'bold 22px Segoe UI';
+            ctx.fillStyle = '#14e2b5';
+            ctx.fillText('Score: ' + Math.floor(score) + '   Best: ' + Math.floor(best), W/2, H/2 + 46);
+        }
+    }
+
+    // ── Spawning ──────────────────────────────────────────
+
+    const SINGLE_TYPES = ['whole', 'half', 'eighth', 'rest'];
+
+    function spawnObstacle() {
+        // Chord chance rises with score
+        const chordChance = Math.min(0.45, 0.10 + Math.floor(score / 200) * 0.05);
+        const isChord = Math.random() < chordChance;
+
+        if (isChord) {
+            // 2-line chord normally, 3-line only after score > 600
+            const maxHeight = score > 600 ? 3 : 2;
+            const height    = (maxHeight === 3 && Math.random() < 0.35) ? 3 : 2;
+            // Always guarantee at least 2 safe escape lines (LINES - height - 1 free lines)
+            const maxStart  = LINES - height - 1;
+            const start     = Math.floor(Math.random() * (maxStart + 1));
+            const lines     = [];
+            for (let i = 0; i < height; i++) lines.push(start + i);
+            obstacles.push({ x: W + 50, type: 'chord', lines });
+        } else {
+            const line = Math.floor(Math.random() * LINES);
+            const type = SINGLE_TYPES[Math.floor(Math.random() * SINGLE_TYPES.length)];
+            obstacles.push({ x: W + 50, type, line });
+        }
+    }
+
+    // ── Collision ─────────────────────────────────────────
+
+    function checkCollision(charY) {
+        const charLeft  = CHAR_X - 13;
+        const charRight = CHAR_X + 13;
+        const charTop   = charY  - 10;
+        const charBot   = charY  + 10;
+
+        for (const obs of obstacles) {
+            const linesToCheck = obs.type === 'chord' ? obs.lines : [obs.line];
+            for (const l of linesToCheck) {
+                const oy     = lineY(l);
+                const left   = obs.x - 16;
+                const right  = obs.x + 16;
+                const top    = oy  - 12;
+                const bot    = oy  + 12;
+                if (charRight > left && charLeft < right &&
+                    charBot   > top  && charTop  < bot) return true;
+            }
+        }
+        return false;
+    }
+
+    // ── Game loop ─────────────────────────────────────────
+
+    function gameLoop(ts) {
+        if (!started || gameOver) return;
+
+        const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
+        lastTime = ts;
+
+        bgOffset += speed * dt * 0.15;
+
+        // Steeper speed ramp — +30px/s every 50 score points, cap 850
+        score += dt * 20;
+        speed  = 220 + Math.floor(score / 50) * 30;
+        speed  = Math.min(speed, 850);
+
+        // Powerup timers
+        if (speedBoostTimer > 0) speedBoostTimer = Math.max(0, speedBoostTimer - dt);
+
+        updateUI();
+
+        // Spawn obstacles
+        spawnTimer -= dt * speed;
+        if (spawnTimer <= 0) {
+            spawnObstacle();
+            spawnTimer = minGap + Math.random() * 160;
+            minGap     = Math.max(100, 280 - Math.floor(score / 60) * 10);
+        }
+
+        // Spawn collectibles (independent timer)
+        collectibleTimer -= dt * speed;
+        if (collectibleTimer <= 0) {
+            spawnCollectible();
+            collectibleTimer = 350 + Math.random() * 300;
+        }
+
+        // Move obstacles and collectibles
+        for (const obs of obstacles) obs.x -= speed * dt;
+        obstacles = obstacles.filter(o => o.x > -60);
+        for (const col of collectibles) col.x -= speed * dt;
+        collectibles = collectibles.filter(c => c.x > -60);
+
+        // Smooth character move — faster lerp when speed boost active
+        const lerpSpeed = speedBoostTimer > 0 ? 28 : 14;
+        charYOffset += (lineY(targetLine) - charYOffset) * Math.min(1, dt * lerpSpeed);
+
+        // Check collectible pickup
+        checkCollectibles(charYOffset);
+
+        // Collision
+        if (checkCollision(charYOffset)) {
+            if (shieldActive) {
+                // Shield absorbs one hit
+                shieldActive = false;
+                // Clear immediately threatening obstacles so the player isn't insta-killed
+                obstacles = obstacles.filter(o => {
+                    const linesToCheck = o.type === 'chord' ? o.lines : [o.line];
+                    for (const l of linesToCheck) {
+                        if (Math.abs(o.x - CHAR_X) < 60 && Math.abs(lineY(l) - charYOffset) < 20) return false;
+                    }
+                    return true;
+                });
+            } else {
+                if (score > best) best = score;
+                gameOver = true;
+                updateUI();
+            }
+        }
+
+        // Render
+        drawBackground();
+        drawTrebleClef();
+        drawStaff();
+        for (const col of collectibles) drawCollectible(col);
+        for (const obs of obstacles) drawObstacle(obs);
+        drawCharacter(charYOffset);
+        if (started && !gameOver) drawActiveEffects();
+
+        if (!gameOver) {
+            requestAnimationFrame(gameLoop);
+        } else {
+            drawOverlay('Game Over!', 'Click or Space to restart');
+        }
+    }
+
+    function startGame() {
+        init();
+        started  = true;
+        lastTime = null;
+        requestAnimationFrame(gameLoop);
+    }
+
+    // ── Controls ──────────────────────────────────────────
+
+    function moveUp()   { if (started && !gameOver && targetLine > 0)           targetLine--; }
+    function moveDown() { if (started && !gameOver && targetLine < LINES - 1)   targetLine++; }
+
+    document.addEventListener('keydown', e => {
+        if (e.code === 'Space' || e.code === 'Enter') {
+            if (!started || gameOver) startGame();
+            else e.preventDefault();
+            return;
+        }
+        if (e.code === 'ArrowUp'   || e.code === 'KeyW') { e.preventDefault(); moveUp();   }
+        if (e.code === 'ArrowDown' || e.code === 'KeyS') { e.preventDefault(); moveDown(); }
+    });
+
+    canvas.addEventListener('click', e => {
+        if (!started || gameOver) { startGame(); return; }
+        const rect = canvas.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        if (y < rect.height / 2) moveUp(); else moveDown();
+    });
+
+    // ── Initial render ────────────────────────────────────
+    init();
+    drawBackground();
+    drawTrebleClef();
+    drawStaff();
+    drawCharacter(lineY(2));
+    drawOverlay('Note Runner', 'Click or Space to start');
+    </script>
+</body>
+</html>
