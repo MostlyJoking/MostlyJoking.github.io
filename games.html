@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Games - Mostly Joking</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-image: url("stock_cow_background.jpg");
+            background-repeat: repeat;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
+        }
+        header { text-align: center; padding: 30px 20px 20px; }
+        header h1 {
+            color: #14e2b5;
+            font-size: 2.8rem;
+            font-weight: 900;
+            -webkit-text-stroke: 1.5px #e67efd;
+            filter: drop-shadow(3px 3px 5px #c026d3);
+        }
+        header p {
+            color: white;
+            text-shadow: 1px 1px 3px #000;
+            font-size: 1.1rem;
+            margin-top: 8px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 12px;
+            color: #14e2b5;
+            font-weight: 700;
+            text-decoration: none;
+            text-shadow: 1px 1px 2px #000;
+        }
+        .back-link:hover { text-decoration: underline; }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+            max-width: 900px;
+            margin: 20px auto 40px;
+            padding: 0 16px;
+        }
+
+        .game-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 28px 24px;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: 0 5px 18px rgba(0,0,0,0.12);
+            border: 3px solid transparent;
+            transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .game-card:hover {
+            transform: translateY(-5px);
+            border-color: #14e2b5;
+            box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+        }
+
+        .game-icon { font-size: 3.5rem; margin-bottom: 12px; }
+        .game-title { font-size: 1.25rem; font-weight: 900; color: #1f1f2e; margin-bottom: 6px; }
+        .game-badge {
+            display: inline-block;
+            background: #dcfce7;
+            color: #16a34a;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .game-badge.new { background: #fef9c3; color: #854d0e; }
+        .game-desc { font-size: 0.9rem; color: #555; line-height: 1.5; }
+
+        .play-btn {
+            display: inline-block;
+            margin-top: 16px;
+            background: #14e2b5;
+            color: white;
+            font-weight: 800;
+            padding: 8px 22px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .play-btn:hover { background: #0fb89a; }
+
+        footer {
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.85rem;
+            text-shadow: 1px 1px 2px #000;
+            padding: 16px;
+        }
+        footer a { color: #14e2b5; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="./index.html" class="back-link">&larr; Back to Mostly Joking</a>
+        <h1>&#127918; Mini Games</h1>
+        <p>Games made by (and mostly about) Mostly Joking. Procrastinate responsibly.</p>
+    </header>
+
+    <div class="games-grid">
+
+        <div class="game-card">
+            <div class="game-icon">&#127925;</div>
+            <div class="game-title">MoJo-dle</div>
+            <span class="game-badge">&#127381; Classic</span>
+            <p class="game-desc">
+                Guess our weekly vocal warmup syllable by syllable.
+                It's like Wordle, but it involves a lot more "mah may mee moh moo."
+            </p>
+            <a href="./MoJo-dle/mojodle.html" class="play-btn">Play &rarr;</a>
+        </div>
+
+        <div class="game-card">
+            <div class="game-icon">&#9632;&#127153;&#9632;</div>
+            <div class="game-title">Chord Chaos</div>
+            <span class="game-badge new">&#10024; New</span>
+            <p class="game-desc">
+                Swap and match colorful harmony blocks before they rise to the top!
+                A musical take on the classic Puzzle League formula.
+            </p>
+            <a href="./games/puzzle-league/index.html" class="play-btn">Play &rarr;</a>
+        </div>
+
+        <div class="game-card">
+            <div class="game-icon">&#9835;</div>
+            <div class="game-title">Note Runner</div>
+            <span class="game-badge new">&#10024; New</span>
+            <p class="game-desc">
+                Run across a musical staff and dodge incoming notes.
+                How far can you go before the music catches up to you?
+            </p>
+            <a href="./games/music-runner/index.html" class="play-btn">Play &rarr;</a>
+        </div>
+
+        <div class="game-card">
+            <div class="game-icon">&#127183;</div>
+            <div class="game-title">Chord Memory</div>
+            <span class="game-badge new">&#10024; New</span>
+            <p class="game-desc">
+                Flip cards to find matching musical symbols in this harmony-themed
+                memory match game. A calm, tuneful brain workout.
+            </p>
+            <a href="./games/chord-match/index.html" class="play-btn">Play &rarr;</a>
+        </div>
+
+    </div>
+
+    <footer>
+        &copy; 2025 Mostly Joking Barbershop Quartet &nbsp;|&nbsp;
+        <a href="https://bonfire.com/store/mostly-joking" target="_blank" rel="noopener">Merch Store</a>
+        &nbsp;|&nbsp;
+        <a href="https://www.midatlanticdistrict.com/?Code=Quartets&ID=726362" target="_blank" rel="noopener">MAD Quartet Page</a>
+    </footer>
+</body>
+</html>

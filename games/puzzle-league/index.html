@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chord Chaos - Mostly Joking Games</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #1a0a2e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: white;
+            padding: 10px;
+        }
+        h1 { font-size: 1.8rem; color: #14e2b5; margin: 8px 0 2px; text-align: center; }
+        .subtitle { color: #a78bfa; font-size: 0.85rem; margin-bottom: 10px; }
+        .back-link { color: #a78bfa; text-decoration: none; font-size: 0.85rem; margin-bottom: 6px; display: block; text-align: center; }
+        .back-link:hover { color: #14e2b5; }
+
+        .game-wrapper {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        #gameCanvas {
+            border: 3px solid #a78bfa;
+            border-radius: 8px;
+            cursor: pointer;
+            display: block;
+        }
+
+        .side-panel {
+            min-width: 140px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel-box {
+            background: rgba(255,255,255,0.07);
+            border: 2px solid #a78bfa;
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+        }
+        .panel-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: #a78bfa; margin-bottom: 4px; }
+        .panel-value { font-size: 1.8rem; font-weight: 900; color: #14e2b5; }
+
+        #riseBar {
+            width: 100%;
+            height: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+        #riseProgress {
+            height: 100%;
+            background: linear-gradient(90deg, #14e2b5, #e67efd);
+            border-radius: 6px;
+            transition: width 0.1s;
+        }
+
+        .btn {
+            background: #7c3aed;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #6d28d9; }
+
+        .instructions {
+            font-size: 0.75rem;
+            color: #a78bfa;
+            line-height: 1.7;
+        }
+        .instructions b { color: #14e2b5; }
+
+        #overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        #overlayBox {
+            background: #1a0a2e;
+            border: 3px solid #14e2b5;
+            border-radius: 20px;
+            padding: 36px 44px;
+            text-align: center;
+            max-width: 340px;
+        }
+        #overlayBox h2 { font-size: 2rem; color: #e67efd; margin-bottom: 10px; }
+        #overlayBox p  { color: #c4b5fd; margin-bottom: 6px; }
+        #overlayBox .big { font-size: 2.5rem; font-weight: 900; color: #14e2b5; }
+        #startBtn {
+            margin-top: 20px;
+            background: #14e2b5;
+            color: #1a0a2e;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 36px;
+            font-size: 1.1rem;
+            font-weight: 900;
+            cursor: pointer;
+        }
+        #startBtn:hover { background: #0fb89a; }
+    </style>
+</head>
+<body>
+    <a href="../../games.html" class="back-link">&larr; Back to Games</a>
+    <h1>&#9632; Chord Chaos &#9632;</h1>
+    <p class="subtitle">Match 3+ harmony blocks &mdash; don't let them reach the top!</p>
+
+    <div class="game-wrapper">
+        <!-- Canvas is ROWS*CELL tall + CELL extra for next-row preview -->
+        <canvas id="gameCanvas" width="312" height="676"></canvas>
+
+        <div class="side-panel">
+            <div class="panel-box">
+                <div class="panel-label">Score</div>
+                <div class="panel-value" id="scoreDisplay">0</div>
+            </div>
+            <div class="panel-box">
+                <div class="panel-label">Level</div>
+                <div class="panel-value" id="levelDisplay">1</div>
+            </div>
+            <div class="panel-box">
+                <div class="panel-label">Next Rise</div>
+                <div id="riseBar"><div id="riseProgress" style="width:100%"></div></div>
+            </div>
+            <div class="panel-box instructions">
+                <b>Move cursor:</b><br>
+                Arrow keys or click<br><br>
+                <b>Swap blocks:</b><br>
+                Space / Enter<br>
+                or click either highlighted block<br><br>
+                Match 3+ same color!<br>
+                Chains = bonus points &#127881;
+            </div>
+            <button class="btn" id="newGameBtn">New Game</button>
+            <button class="btn" id="raiseBtn" title="Force a rise now">&#9650; Raise Now</button>
+        </div>
+    </div>
+
+    <div id="overlay">
+        <div id="overlayBox">
+            <h2>&#9632; Chord Chaos!</h2>
+            <p>Move the 2-block cursor with arrow keys.</p>
+            <p>Press <b>Space/Enter</b> or click either block to swap.</p>
+            <p style="margin-top:12px; color:#e67efd; font-size:0.85rem;">Chains give BONUS points! &#127881;</p>
+            <div id="finalScore" style="display:none; margin:10px 0;">
+                <p>Your Score:</p>
+                <div class="big" id="finalScoreNum">0</div>
+            </div>
+            <button id="startBtn">&#9654; Play!</button>
+        </div>
+    </div>
+
+    <script>
+    const COLS = 6;
+    const ROWS = 12;
+    const CELL = 52;
+    const W = COLS * CELL;          // 312
+    const H = ROWS * CELL;          // 624  (game area)
+    const CANVAS_H = H + CELL;      // 676  (includes preview row)
+
+    const COLORS     = ['#ef4444','#3b82f6','#22c55e','#f59e0b','#a855f7'];
+    const DARK_COLS  = ['#7f1d1d','#1e3a8a','#14532d','#78350f','#4c1d95'];
+    const LIGHT_COLS = ['#fca5a5','#93c5fd','#86efac','#fcd34d','#d8b4fe'];
+    const SYMBOLS    = ['♩','♪','♫','♬','𝄞'];
+
+    // ── State ─────────────────────────────────────────────
+    let grid;
+    let nextRow;           // the row that will rise in next
+    let cursor;            // {row, col}  — col is LEFT cell of 2-wide selector
+    let score, level, gameOver, combo;
+    let riseTimer, riseInterval;
+    let flashCells = new Set();
+    let swapAnim = null;   // { row, col, progress, colorA, colorB }
+    const SWAP_DURATION = 0.18;  // seconds
+    let lastFrameTime = 0;
+    let animFrame;
+
+    const canvas    = document.getElementById('gameCanvas');
+    const ctx       = canvas.getContext('2d');
+    const scoreEl   = document.getElementById('scoreDisplay');
+    const levelEl   = document.getElementById('levelDisplay');
+    const riseEl    = document.getElementById('riseProgress');
+    const overlay   = document.getElementById('overlay');
+    const finalDiv  = document.getElementById('finalScore');
+    const finalNum  = document.getElementById('finalScoreNum');
+
+    // ── Grid helpers ──────────────────────────────────────
+
+    function genRow(prevRow) {
+        const row = [];
+        for (let c = 0; c < COLS; c++) {
+            let opts = [0,1,2,3,4];
+            if (prevRow)        opts = opts.filter(x => x !== prevRow[c]);
+            if (c >= 2 && row[c-1] === row[c-2]) opts = opts.filter(x => x !== row[c-1]);
+            if (opts.length === 0) opts = [0,1,2,3,4];
+            row.push(opts[Math.floor(Math.random() * opts.length)]);
+        }
+        return row;
+    }
+
+    function initGrid() {
+        grid = [];
+        for (let r = 0; r < ROWS; r++) grid.push(new Array(COLS).fill(-1));
+        let prev = null;
+        for (let r = ROWS - 5; r < ROWS; r++) {
+            const row = genRow(prev);
+            grid[r] = row;
+            prev = row;
+        }
+        nextRow = genRow(grid[ROWS - 1]);
+    }
+
+    function applyGravity() {
+        for (let c = 0; c < COLS; c++) {
+            const blocks = grid.map(row => row[c]).filter(v => v !== -1);
+            for (let r = 0; r < ROWS; r++) {
+                const filled = ROWS - blocks.length;
+                grid[r][c] = r < filled ? -1 : blocks[r - filled];
+            }
+        }
+    }
+
+    function findMatches() {
+        const matched = new Set();
+        // Horizontal
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS - 2; c++) {
+                const col = grid[r][c];
+                if (col === -1) continue;
+                let end = c;
+                while (end + 1 < COLS && grid[r][end+1] === col) end++;
+                if (end - c >= 2) for (let i = c; i <= end; i++) matched.add(r * COLS + i);
+            }
+        }
+        // Vertical
+        for (let c = 0; c < COLS; c++) {
+            for (let r = 0; r < ROWS - 2; r++) {
+                const col = grid[r][c];
+                if (col === -1) continue;
+                let end = r;
+                while (end + 1 < ROWS && grid[end+1][c] === col) end++;
+                if (end - r >= 2) for (let i = r; i <= end; i++) matched.add(i * COLS + c);
+            }
+        }
+        return matched;
+    }
+
+    function processMatches(chainCombo) {
+        const matches = findMatches();
+        if (matches.size === 0) { combo = 0; return; }
+        combo = chainCombo || 1;
+        score += matches.size * 10 * combo;
+        scoreEl.textContent = score;
+        matches.forEach(k => flashCells.add(k));
+        setTimeout(() => {
+            matches.forEach(k => {
+                grid[Math.floor(k/COLS)][k%COLS] = -1;
+                flashCells.delete(k);
+            });
+            applyGravity();
+            // Level is a display counter only; riseInterval is computed smoothly per frame
+            const newLevel = 1 + Math.floor(score / 500);
+            if (newLevel > level) {
+                level = newLevel;
+                levelEl.textContent = level;
+            }
+            setTimeout(() => processMatches(combo + 1), 150);
+        }, 350);
+    }
+
+    // ── Cursor swap ───────────────────────────────────────
+
+    function doSwap() {
+        const r = cursor.row, c = cursor.col;
+        if (r < 0 || r >= ROWS || c < 0 || c + 1 >= COLS) return;
+        if (swapAnim) return;  // don't interrupt ongoing swap
+        const colorA = grid[r][c];
+        const colorB = grid[r][c + 1];
+        // Swap data immediately; animation handles the visual slide
+        grid[r][c]     = colorB;
+        grid[r][c + 1] = colorA;
+        swapAnim = { row: r, col: c, progress: 0, colorA, colorB };
+        // Gravity + matches fire when the animation completes (in loop)
+    }
+
+    // ── Rise ──────────────────────────────────────────────
+
+    function doRise() {
+        for (let c = 0; c < COLS; c++) {
+            if (grid[0][c] !== -1) { endGame(); return; }
+        }
+        for (let r = 0; r < ROWS - 1; r++) grid[r] = [...grid[r+1]];
+        grid[ROWS - 1] = [...nextRow];
+        nextRow = genRow(grid[ROWS - 1]);
+        // Keep cursor in bounds after rise
+        cursor.row = Math.max(0, cursor.row - 1);
+        score += 2;
+        scoreEl.textContent = score;
+        setTimeout(() => processMatches(1), 100);
+    }
+
+    // ── End / Start ───────────────────────────────────────
+
+    function endGame() {
+        gameOver = true;
+        cancelAnimationFrame(animFrame);
+        finalDiv.style.display = 'block';
+        finalNum.textContent = score;
+        overlay.querySelector('h2').textContent = 'Game Over!';
+        overlay.querySelector('p').textContent = 'The harmony stacked up too high!';
+        document.getElementById('startBtn').textContent = 'Play Again';
+        overlay.style.display = 'flex';
+    }
+
+    function startGame() {
+        score = 0; level = 1; gameOver = false; combo = 0;
+        riseInterval = 10000;
+        riseTimer    = Date.now();
+        lastFrameTime = 0;
+        flashCells.clear();
+        swapAnim = null;
+        cursor = { row: ROWS - 1, col: 2 };
+        initGrid();
+        scoreEl.textContent = '0';
+        levelEl.textContent = '1';
+        overlay.style.display = 'none';
+        finalDiv.style.display = 'none';
+        loop();
+    }
+
+    // ── Drawing ───────────────────────────────────────────
+
+    function drawBlock(x, y, colorIdx, isCursorLeft, isCursorRight, isFlash, xOffset = 0) {
+        x += xOffset;  // apply slide offset for swap animation
+        if (colorIdx === -1) {
+            ctx.fillStyle = 'rgba(255,255,255,0.03)';
+            ctx.fillRect(x+1, y+1, CELL-2, CELL-2);
+            // If empty but under cursor, still show cursor highlight
+            if (isCursorLeft || isCursorRight) drawCursorHighlight(x, y, isCursorLeft, isCursorRight);
+            return;
+        }
+
+        const base = isFlash ? '#ffffff' : COLORS[colorIdx];
+        const dark = DARK_COLS[colorIdx];
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        roundRect(x+5, y+5, CELL-6, CELL-6, 8); ctx.fill();
+
+        // Body
+        ctx.fillStyle = base;
+        roundRect(x+2, y+2, CELL-6, CELL-6, 8); ctx.fill();
+
+        // Shine
+        ctx.fillStyle = 'rgba(255,255,255,0.32)';
+        roundRect(x+6, y+4, CELL-18, Math.floor((CELL-8)/2.2), 6); ctx.fill();
+
+        // Border
+        ctx.strokeStyle = dark;
+        ctx.lineWidth = 2;
+        roundRect(x+2, y+2, CELL-6, CELL-6, 8); ctx.stroke();
+
+        // Symbol
+        ctx.fillStyle = 'rgba(0,0,0,0.22)';
+        ctx.font = `bold ${Math.floor(CELL*0.38)}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(SYMBOLS[colorIdx], x + CELL/2 - 2, y + CELL/2);
+
+        // Cursor highlight
+        if (isCursorLeft || isCursorRight) drawCursorHighlight(x, y, isCursorLeft, isCursorRight);
+    }
+
+    function drawCursorHighlight(x, y, isLeft, isRight) {
+        // Bright bracket around the cursor's 2-cell span
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#14e2b5';
+        ctx.shadowBlur = 8;
+
+        const top    = y + 3;
+        const bot    = y + CELL - 3;
+        const thick  = 8;  // bracket arm length
+
+        if (isLeft) {
+            // Left bracket: [ on the left side + top/bottom arms
+            ctx.beginPath();
+            ctx.moveTo(x + thick, top);
+            ctx.lineTo(x + 3, top);
+            ctx.lineTo(x + 3, bot);
+            ctx.lineTo(x + thick, bot);
+            ctx.stroke();
+        }
+        if (isRight) {
+            // Right bracket: ] on the right side
+            ctx.beginPath();
+            ctx.moveTo(x + CELL - thick, top);
+            ctx.lineTo(x + CELL - 3, top);
+            ctx.lineTo(x + CELL - 3, bot);
+            ctx.lineTo(x + CELL - thick, bot);
+            ctx.stroke();
+        }
+        // Top and bottom connectors between the two cells (inner horizontal lines)
+        if (isLeft) {
+            ctx.beginPath();
+            ctx.moveTo(x + 3, top);
+            ctx.lineTo(x + CELL, top);   // extends to right cell
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x + 3, bot);
+            ctx.lineTo(x + CELL, bot);
+            ctx.stroke();
+        }
+
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+    }
+
+    function drawPreviewRow() {
+        // Dimly render the upcoming row below the game grid
+        ctx.globalAlpha = 0.45;
+        const y = H;  // one row below the grid
+        for (let c = 0; c < COLS; c++) {
+            const colorIdx = nextRow[c];
+            const x = c * CELL;
+
+            if (colorIdx !== -1) {
+                // Mini-block with same styling, dimmed by globalAlpha
+                ctx.fillStyle = COLORS[colorIdx];
+                roundRect(x+2, y+2, CELL-6, CELL-6, 8); ctx.fill();
+                ctx.strokeStyle = DARK_COLS[colorIdx];
+                ctx.lineWidth = 2;
+                roundRect(x+2, y+2, CELL-6, CELL-6, 8); ctx.stroke();
+                ctx.fillStyle = 'rgba(0,0,0,0.22)';
+                ctx.font = `bold ${Math.floor(CELL*0.38)}px serif`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(SYMBOLS[colorIdx], x + CELL/2 - 2, y + CELL/2);
+            }
+        }
+        ctx.globalAlpha = 1;
+
+        // "Next" label
+        ctx.fillStyle = 'rgba(167,139,250,0.7)';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText('NEXT ↑', 4, H + CELL/2);
+    }
+
+    function draw() {
+        // Background
+        const bg = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
+        bg.addColorStop(0, '#1a0a2e');
+        bg.addColorStop(1, '#2d1b69');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, W, CANVAS_H);
+
+        // Divider line between play area and preview
+        ctx.strokeStyle = 'rgba(167,139,250,0.3)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(W, H); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Danger zone highlight
+        let topFilled = false;
+        for (let c = 0; c < COLS; c++) {
+            if (grid[0][c] !== -1 || grid[1][c] !== -1 || grid[2][c] !== -1) {
+                topFilled = true; break;
+            }
+        }
+        if (topFilled) {
+            ctx.fillStyle = 'rgba(239,68,68,0.12)';
+            ctx.fillRect(0, 0, W, CELL * 3);
+        }
+
+        // Grid lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 1;
+        for (let r = 0; r <= ROWS; r++) {
+            ctx.beginPath(); ctx.moveTo(0, r*CELL); ctx.lineTo(W, r*CELL); ctx.stroke();
+        }
+        for (let c = 0; c <= COLS; c++) {
+            ctx.beginPath(); ctx.moveTo(c*CELL, 0); ctx.lineTo(c*CELL, H); ctx.stroke();
+        }
+
+        // Blocks
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const key = r * COLS + c;
+                const isSwapLeft  = swapAnim && swapAnim.row === r && swapAnim.col === c;
+                const isSwapRight = swapAnim && swapAnim.row === r && swapAnim.col + 1 === c;
+                // Suppress cursor brackets on animating cells (avoids visual stutter)
+                const isCursorLeft  = !isSwapLeft && !isSwapRight && cursor && cursor.row === r && cursor.col === c;
+                const isCursorRight = !isSwapLeft && !isSwapRight && cursor && cursor.row === r && cursor.col === c - 1;
+                // colorB (now at col) slides from col+1 → col; colorA (now at col+1) slides from col → col+1
+                let xOffset = 0;
+                if (isSwapLeft)  xOffset =  (1 - swapAnim.progress) * CELL;
+                if (isSwapRight) xOffset = -(1 - swapAnim.progress) * CELL;
+                drawBlock(c*CELL, r*CELL, grid[r][c], isCursorLeft, isCursorRight, flashCells.has(key), xOffset);
+            }
+        }
+
+        // Preview row
+        if (nextRow) drawPreviewRow();
+    }
+
+    function roundRect(x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x+r, y);
+        ctx.lineTo(x+w-r, y);
+        ctx.arcTo(x+w, y, x+w, y+r, r);
+        ctx.lineTo(x+w, y+h-r);
+        ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+        ctx.lineTo(x+r, y+h);
+        ctx.arcTo(x, y+h, x, y+h-r, r);
+        ctx.lineTo(x, y+r);
+        ctx.arcTo(x, y, x+r, y, r);
+        ctx.closePath();
+    }
+
+    // ── Game loop ─────────────────────────────────────────
+
+    function loop(ts = 0) {
+        if (gameOver) return;
+        animFrame = requestAnimationFrame(loop);
+
+        // Delta time for smooth animation (capped at 50ms to avoid spiral of death)
+        const dt = Math.min((ts - lastFrameTime) / 1000, 0.05);
+        lastFrameTime = ts;
+
+        // Advance swap animation
+        if (swapAnim) {
+            swapAnim.progress += dt / SWAP_DURATION;
+            if (swapAnim.progress >= 1) {
+                swapAnim.progress = 1;
+                swapAnim = null;
+                applyGravity();
+                setTimeout(() => processMatches(1), 50);
+            }
+        }
+
+        // Smooth rise speed: hyperbolic decay — no abrupt jumps
+        // score=0 → 10 000ms, score=500 → 5 000ms, score=1250 → ~2 857ms, score≥1250 → capped 2 500ms
+        riseInterval = Math.max(2500, Math.round(10000 / (1 + score / 500)));
+
+        draw();
+
+        const now     = Date.now();
+        const elapsed = now - riseTimer;
+        const pct     = Math.min(1, elapsed / riseInterval);
+        riseEl.style.width = (100 - pct * 100) + '%';
+        riseEl.style.background = pct > 0.8
+            ? 'linear-gradient(90deg, #ef4444, #f97316)'
+            : 'linear-gradient(90deg, #14e2b5, #e67efd)';
+        if (elapsed >= riseInterval) {
+            riseTimer = now;
+            doRise();
+        }
+    }
+
+    // ── Input ─────────────────────────────────────────────
+
+    // Keyboard: arrows move cursor, Space/Enter swap
+    document.addEventListener('keydown', e => {
+        if (gameOver) return;
+        switch (e.code) {
+            case 'ArrowLeft':
+                e.preventDefault();
+                if (cursor.col > 0) cursor.col--;
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                if (cursor.col < COLS - 2) cursor.col++;
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                if (cursor.row > 0) cursor.row--;
+                break;
+            case 'ArrowDown':
+                e.preventDefault();
+                if (cursor.row < ROWS - 1) cursor.row++;
+                break;
+            case 'Space':
+            case 'Enter':
+                e.preventDefault();
+                doSwap();
+                break;
+        }
+    });
+
+    // Mouse: click to move cursor; if already on cursor, swap
+    canvas.addEventListener('click', e => {
+        if (gameOver) return;
+        const rect  = canvas.getBoundingClientRect();
+        const mx    = e.clientX - rect.left;
+        const my    = e.clientY - rect.top;
+        const scaleX = W / rect.width;
+        const scaleY = CANVAS_H / rect.height;
+        const c = Math.floor(mx * scaleX / CELL);
+        const r = Math.floor(my * scaleY / CELL);
+        if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
+
+        // If clicking a cell that's already under the cursor → swap
+        if (cursor.row === r && (cursor.col === c || cursor.col + 1 === c)) {
+            doSwap();
+        } else {
+            // Move cursor so c is one of the two cells (prefer c as left)
+            cursor.row = r;
+            cursor.col = Math.min(Math.max(0, c), COLS - 2);
+        }
+    });
+
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('newGameBtn').addEventListener('click', () => {
+        overlay.querySelector('h2').textContent = 'Chord Chaos!';
+        overlay.querySelector('p').textContent = 'Move cursor with arrows, Space/Enter to swap!';
+        document.getElementById('startBtn').innerHTML = '&#9654; Play!';
+        document.getElementById('finalScore').style.display = 'none';
+        overlay.style.display = 'flex';
+    });
+    document.getElementById('raiseBtn').addEventListener('click', () => {
+        if (!gameOver) { riseTimer = 0; }
+    });
+    </script>
+</body>
+</html>

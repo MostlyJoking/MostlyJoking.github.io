@@ -29,62 +29,178 @@
         <title>Mostly Joking 🐄</title>
 
         <style>
-            .mooty {
-                display: block;
-                margin-left: auto;
-                margin-right: 0px;
-                margin-top: 0px;
-                width: 30%;
-            }
+            @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
+
+            * { box-sizing: border-box; margin: 0; padding: 0; }
 
             body {
                 background-image: url("stock_cow_background.jpg");
                 background-repeat: repeat;
-                display: block;
+                font-family: 'Nunito', Arial, sans-serif;
+            }
+
+            .site-header {
+                text-align: center;
+                padding: 30px 20px 10px;
             }
 
             h1 {
                 color: #14e2b5;
-                font-weight: bold;
-                font-size: 42px;
-                margin-left: auto;
-                margin-right: auto;
-                -webkit-text-stroke-width: 1px;
-                -webkit-text-stroke-color: pink;
-                filter: drop-shadow(3px 3px 4px #e67efd);
-
+                font-family: 'Fredoka One', cursive;
+                font-size: 3.2rem;
+                -webkit-text-stroke: 1.5px #e67efd;
+                filter: drop-shadow(3px 3px 5px #c026d3);
             }
 
-            h2 {
-                color: #14e2b5;
-                font-weight: bold;
-                margin-left: auto;
-                margin-right: auto;
-                -webkit-text-stroke-width: 1px;
-                -webkit-text-stroke-color: pink;
-                filter: drop-shadow(3px 3px 4px #e67efd);
+            .tagline {
+                color: white;
+                font-size: 1.2rem;
+                font-weight: 700;
+                text-shadow: 1px 1px 4px #000;
+                margin: 8px 0 20px;
+            }
 
+            .nav-grid {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 12px;
+                max-width: 800px;
+                margin: 0 auto 30px;
+                padding: 0 16px;
+            }
+
+            .nav-card {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255,255,255,0.92);
+                border: 3px solid #14e2b5;
+                border-radius: 16px;
+                padding: 18px 22px;
+                text-decoration: none;
+                color: #7c3aed;
+                font-weight: 800;
+                font-size: 1rem;
+                min-width: 140px;
+                transition: transform 0.15s, box-shadow 0.15s;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            }
+            .nav-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+                background: #ede9fe;
+            }
+            .nav-card .card-icon { font-size: 2rem; margin-bottom: 6px; }
+            .nav-card .card-label { text-align: center; line-height: 1.2; }
+
+            .mooty {
+                display: block;
+                margin: 0 auto;
+                width: min(30%, 200px);
+            }
+
+            .video-section {
+                max-width: 860px;
+                margin: 0 auto 30px;
+                padding: 0 16px;
+            }
+            .video-section h2 {
+                color: #14e2b5;
+                font-family: 'Fredoka One', cursive;
+                font-size: 1.8rem;
+                -webkit-text-stroke: 1px #e67efd;
+                filter: drop-shadow(2px 2px 3px #c026d3);
+                margin-bottom: 12px;
+                text-align: center;
             }
             .ytvid {
-                width: 420px;
-                height: 315px;
+                width: 100%;
+                max-width: 420px;
+                aspect-ratio: 4/3;
+                display: block;
+                margin: 0 auto;
+                border-radius: 12px;
             }
+
+            .meme-tag-link {
+                display: block;
+                text-align: center;
+                margin-bottom: 12px;
+            }
+            .meme-tag-link a {
+                color: #14e2b5;
+                font-weight: 800;
+                font-size: 1.1rem;
+                text-shadow: 1px 1px 3px #000;
+                text-decoration: none;
+            }
+            .meme-tag-link a:hover { text-decoration: underline; }
+
+            footer {
+                text-align: center;
+                padding: 16px;
+                color: rgba(255,255,255,0.7);
+                font-size: 0.85rem;
+                text-shadow: 1px 1px 2px #000;
+            }
+            footer a { color: #14e2b5; }
         </style>
     </head>
     <body>
-        <h1>
-            Hello Barbershop World
-        </h1>
-        <a href="./MoJo-dle/mojodle.html" style="font-size: 50px; background:white; padding: 10px; border: 5px solid #14e2b5; color: #e67efd; font-weight: bold;">Play the MoJo-dle!</a>
-        <div>
-            <h2>Follow the <a href="./mojomemetagchallenge.html">#MoJoMemeTagChallenge</a></h2>
-            <div style="display: flex">
-                <div>
-                    <iframe class="ytvid" src="https://www.youtube.com/embed/nXCzrswEhvo?loop=1"></iframe>
-                </div>
-                <div></div>
-            </div>
-            <img src="mooty.jpg" class="mooty" alt="cow">
+        <div class="site-header">
+            <h1>Mostly Joking 🐄</h1>
+            <p class="tagline">We laugh so you don't have to.</p>
         </div>
+
+        <!-- ── Navigation Cards ─────────────────────── -->
+        <nav class="nav-grid">
+            <a href="./MoJo-dle/mojodle.html" class="nav-card">
+                <span class="card-icon">🎵</span>
+                <span class="card-label">Play MoJo-dle</span>
+            </a>
+            <a href="./games.html" class="nav-card">
+                <span class="card-icon">🕹️</span>
+                <span class="card-label">Mini Games</span>
+            </a>
+            <a href="./events.html" class="nav-card">
+                <span class="card-icon">📅</span>
+                <span class="card-label">Upcoming Events</span>
+            </a>
+            <a href="https://bonfire.com/store/mostly-joking" target="_blank" rel="noopener" class="nav-card">
+                <span class="card-icon">👕</span>
+                <span class="card-label">Merch Store</span>
+            </a>
+            <a href="https://www.midatlanticdistrict.com/?Code=Quartets&amp;ID=726362" target="_blank" rel="noopener" class="nav-card">
+                <span class="card-icon">🏆</span>
+                <span class="card-label">Our MAD Profile</span>
+            </a>
+            <a href="./mojomemetagchallenge.html" class="nav-card">
+                <span class="card-icon">🐮</span>
+                <span class="card-label">#MoJoMemeTag Challenge</span>
+            </a>
+        </nav>
+
+        <!-- ── Video ────────────────────────────────── -->
+        <div class="video-section">
+            <h2>Latest Video</h2>
+            <iframe
+                class="ytvid"
+                src="https://www.youtube.com/embed/nXCzrswEhvo?loop=1"
+                allow="autoplay; encrypted-media"
+                allowfullscreen
+                title="Mostly Joking video">
+            </iframe>
+        </div>
+
+        <img src="mooty.jpg" class="mooty" alt="Mooty the mascot cow">
+
+        <footer>
+            &copy; 2025 Mostly Joking Barbershop Quartet &nbsp;|&nbsp;
+            <a href="https://bonfire.com/store/mostly-joking" target="_blank" rel="noopener">Merch Store</a>
+            &nbsp;|&nbsp;
+            <a href="https://www.midatlanticdistrict.com/?Code=Quartets&ID=726362" target="_blank" rel="noopener">MAD Quartet Page</a>
+        </footer>
     </body>
 </html>

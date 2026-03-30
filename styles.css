@@ -142,3 +142,143 @@ div.emoji-grid-container
     background-color: #0c8a78;
     transform: scale(0.95);
 }
+/* ── MoJo-dle specific ─────────────────────────────────── */
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #f8f4ff;
+    min-height: 100vh;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    color: #7c3aed;
+    margin: 8px 0;
+}
+
+header p {
+    color: #555;
+    font-size: 1rem;
+    margin: 4px 0 12px;
+}
+
+.back-link {
+    color: #7c3aed;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+.back-link:hover { text-decoration: underline; }
+
+.puzzle-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin: 10px auto;
+    max-width: 700px;
+    padding: 0 10px;
+}
+
+button.puzzle-button {
+    padding: 6px 14px;
+    background: #ede9fe;
+    color: #7c3aed;
+    border: 2px solid #c4b5fd;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.1s;
+}
+button.puzzle-button:hover { background: #ddd6fe; }
+button.puzzle-button.active {
+    background: #7c3aed;
+    color: white;
+    border-color: #7c3aed;
+}
+
+.puzzle-hint {
+    text-align: center;
+    font-style: italic;
+    color: #6b7280;
+    margin: 10px 0 6px;
+    font-size: 0.95rem;
+}
+
+div.grid-item {
+    width: 60px;
+    height: 60px;
+    border: 2px solid #c4b5fd;
+    border-radius: 8px;
+    margin: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+    background: white;
+    transition: background-color 0.3s ease;
+    min-width: 50px;
+}
+
+div.word-item {
+    min-width: 52px;
+    height: 52px;
+    border: 2px solid #a78bfa;
+    border-radius: 8px;
+    margin: 6px;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    transition: background-color 0.2s, opacity 0.2s, transform 0.1s;
+    user-select: none;
+}
+div.word-item:hover:not(.used) {
+    background: #ede9fe;
+    transform: translateY(-2px);
+}
+div.word-item.used {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.submit-button {
+    background-color: #7c3aed !important;
+}
+.submit-button:hover {
+    background-color: #6d28d9 !important;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+    font-size: 0.85rem;
+    margin-top: 40px;
+}
+footer a { color: #7c3aed; }
+
+/* ── Shared nav link style ────────────────────────────── */
+.nav-link {
+    display: inline-block;
+    background: white;
+    color: #7c3aed;
+    border: 2px solid #7c3aed;
+    border-radius: 8px;
+    padding: 10px 20px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: background 0.2s, color 0.2s;
+    margin: 6px;
+}
+.nav-link:hover {
+    background: #7c3aed;
+    color: white;
+}
