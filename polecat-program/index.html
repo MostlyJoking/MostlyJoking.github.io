@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Song Completion Tracker</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/modal.css">
+</head>
+<body>
+
+  <!-- ===== CONFIG WARNING (shown when app.js placeholders not replaced) ===== -->
+  <div id="config-warning" class="hidden">
+    <h2>Setup Required</h2>
+    <p>Open <code>app.js</code> and replace <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> with your project credentials.</p>
+    <p>See <code>setup.sql</code> for database setup instructions.</p>
+  </div>
+
+  <!-- ===== AUTH SECTION ===== -->
+  <div id="auth-section" class="hidden">
+    <div class="auth-card">
+      <h1>Song Completion Tracker</h1>
+      <p class="auth-subtitle">Barbershop Chorus Practice Tracker</p>
+
+      <div id="auth-tabs">
+        <button class="tab active" data-tab="login" onclick="showTab('login')">Login</button>
+        <button class="tab" data-tab="register" onclick="showTab('register')">Register</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn-primary" id="login-btn">Login</button>
+        <div id="login-error" class="error-text"></div>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" class="hidden" onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label for="reg-name">Display Name</label>
+          <input type="text" id="reg-name" placeholder="Your name as it appears in the tracker" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-email">Email</label>
+          <input type="email" id="reg-email" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Password</label>
+          <input type="password" id="reg-password" autocomplete="new-password" minlength="6" required>
+        </div>
+        <button type="submit" class="btn-primary" id="register-btn">Create Account</button>
+        <div id="register-error" class="error-text"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== CHORUS SELECTION ===== -->
+  <div id="chorus-section" class="hidden">
+    <div class="chorus-card">
+      <h2>Select Your Chorus</h2>
+      <div id="chorus-list"></div>
+      <div id="chorus-error" class="error-text"></div>
+    </div>
+  </div>
+
+  <!-- ===== MAIN APP ===== -->
+  <div id="app-section" class="hidden">
+
+    <header>
+      <div class="header-title">
+        <h1>Song Completion Tracker</h1>
+        <div class="header-chorus" id="header-chorus-name"></div>
+      </div>
+      <div class="header-right">
+        <span class="header-user">Signed in as <strong id="header-user-name"></strong></span>
+        <button class="btn-header" onclick="handleChangeChorus()">Change Chorus</button>
+        <button class="btn-header" onclick="handleLogout()">Logout</button>
+      </div>
+    </header>
+
+    <div id="spreadsheet-section">
+      <div id="loading-msg">Loading spreadsheet...</div>
+      <div id="table-wrapper" class="hidden">
+        <table id="tracker-table">
+          <thead><tr id="header-row"></tr></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer class="legend">
+      <div class="legend-inner">
+        <span class="legend-item"><span class="star complete bass">★</span> Bass (Complete)</span>
+        <span class="legend-item"><span class="star learning bass">☆</span> Bass (Learning)</span>
+        <span class="legend-sep"></span>
+        <span class="legend-item"><span class="star complete baritone">★</span> Baritone (Complete)</span>
+        <span class="legend-item"><span class="star learning baritone">☆</span> Baritone (Learning)</span>
+        <span class="legend-sep"></span>
+        <span class="legend-item"><span class="star complete lead">★</span> Lead (Complete)</span>
+        <span class="legend-item"><span class="star learning lead">☆</span> Lead (Learning)</span>
+        <span class="legend-sep"></span>
+        <span class="legend-item"><span class="star complete tenor">★</span> Tenor (Complete)</span>
+        <span class="legend-item"><span class="star learning tenor">☆</span> Tenor (Learning)</span>
+
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ===== EDIT MODAL ===== -->
+  <div id="modal-overlay" class="hidden" onclick="closeModal()"></div>
+  <div id="edit-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="modal-song-name">
+    <h3 id="modal-song-name"></h3>
+    <p class="modal-subtitle">Select your status for each part</p>
+    <div id="modal-parts"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button id="save-btn" class="btn-primary" onclick="saveProgress()">Save</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Load order matters: config/state/utils before the modules that use them -->
+  <script src="js/config.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/chorus.js"></script>
+  <script src="js/spreadsheet.js"></script>
+  <script src="js/modal.js"></script>
+</body>
+</html>
