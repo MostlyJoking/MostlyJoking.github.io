@@ -1,0 +1,112 @@
+/* ============================================================
+   MODAL — Edit-progress overlay and dialog
+   ============================================================ */
+
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+#edit-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 12px;
+  padding: 28px 32px;
+  z-index: 101;
+  min-width: 340px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+#edit-modal h3 {
+  font-size: 17px;
+  color: #1e3a5f;
+  margin-bottom: 4px;
+}
+
+.modal-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+/* One row per vocal part */
+.modal-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.modal-part-label {
+  width: 72px;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.modal-part-label.bass     { color: #3b82f6; }
+.modal-part-label.baritone { color: #22c55e; }
+.modal-part-label.lead     { color: #ef4444; }
+.modal-part-label.tenor    { color: #eab308; }
+
+/* Three-option button group: None / Learning / Complete */
+.modal-btn-group {
+  display: flex;
+  gap: 6px;
+}
+
+.status-btn {
+  width: 50px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  color: #9ca3af;
+  transition: all 0.1s;
+  padding: 0;
+}
+
+.status-btn:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.status-btn.selected {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.status-btn .star { font-size: 20px; }
+
+/* Save / Cancel buttons */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn-secondary {
+  padding: 9px 18px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  transition: background 0.1s;
+}
+
+.btn-secondary:hover { background: #f9fafb; }

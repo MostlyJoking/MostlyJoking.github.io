@@ -1,0 +1,125 @@
+/* ============================================================
+   BASE — Reset, body, global utilities, shared form components
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f0f4f8;
+  color: #1a2332;
+  min-height: 100vh;
+}
+
+.hidden { display: none !important; }
+
+/* ============================================================
+   CONFIG WARNING
+   ============================================================ */
+#config-warning {
+  max-width: 560px;
+  margin: 60px auto;
+  background: #fffbeb;
+  border: 2px solid #f59e0b;
+  border-radius: 10px;
+  padding: 28px 32px;
+  text-align: center;
+}
+
+#config-warning h2 {
+  color: #92400e;
+  margin-bottom: 12px;
+  font-size: 20px;
+}
+
+#config-warning p { color: #78350f; margin-bottom: 8px; line-height: 1.5; }
+
+#config-warning code {
+  background: #fde68a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+/* ============================================================
+   SHARED FORM COMPONENTS
+   Used in the auth forms and the edit modal
+   ============================================================ */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 15px;
+  width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.btn-primary {
+  padding: 11px 16px;
+  background: #1e3a5f;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: background 0.15s;
+  margin-top: 4px;
+}
+
+.btn-primary:hover    { background: #163052; }
+.btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+
+.error-text {
+  color: #dc2626;
+  font-size: 13px;
+  min-height: 18px;
+}
+
+.success-msg {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #166534;
+  padding: 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.loading-inline {
+  text-align: center;
+  color: #6b7280;
+  padding: 12px;
+}
